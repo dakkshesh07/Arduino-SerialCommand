@@ -27,17 +27,17 @@
  * Constructor makes sure some things are set.
  */
 SerialCommand::SerialCommand(int maxCommands)
-  : commandList(NULL),
-    commandCount(0),
-    defaultHandler(NULL),
-    term('\n'),           // default terminator for commands, newline character
-    last(NULL)
+  : _commandList(NULL),
+    _commandCount(0),
+    _defaultHandler(NULL),
+    _term('\n'),           // default terminator for commands, newline character
+    _last(NULL)
 {
   _maxCommands = maxCommands;
-  strcpy(delim, " "); // strtok_r needs a null-terminated string
+  strcpy(_delim, " "); // strtok_r needs a null-terminated string
   clearBuffer();
   //allocate memory for the command list
-  commandList = (SerialCommandCallback *) calloc(maxCommands, sizeof(SerialCommandCallback));
+  _commandList = (SerialCommandCallback *) calloc(maxCommands, sizeof(SerialCommandCallback));
 }
 
 /**
@@ -48,19 +48,19 @@ SerialCommand::SerialCommand(int maxCommands)
 void SerialCommand::addCommand(const char *command, void (*function)()) {
   #ifdef SERIALCOMMAND_DEBUG
     Serial.print("Adding command (");
-    Serial.print(commandCount);
+    Serial.print(_commandCount);
     Serial.print("): ");
     Serial.println(command);
   #endif
-  if (commandCount >= _maxCommands){
+  if (_commandCount >= _maxCommands){
       #ifdef SERIALCOMMAND_DEBUG
       Serial.print("Error: maxCommands was exceeded");
       #endif
       return;
     }
-  strncpy(commandList[commandCount].command, command, SERIALCOMMAND_MAXCOMMANDLENGTH);
-  commandList[commandCount].function = function;
-  commandCount++;
+  strncpy(_commandList[_commandCount].command, command, SERIALCOMMAND_MAXCOMMANDLENGTH);
+  _commandList[_commandCount].function = function;
+  _commandCount++;
 }
 
 /**
@@ -68,7 +68,7 @@ void SerialCommand::addCommand(const char *command, void (*function)()) {
  * isn't in the list of commands.
  */
 void SerialCommand::setDefaultHandler(void (*function)(const char *)) {
-  defaultHandler = function;
+  _defaultHandler = function;
 }
 
 
@@ -84,47 +84,47 @@ void SerialCommand::readSerial() {
       Serial.print(inChar);   // Echo back to serial stream
     #endif
 
-    if (inChar == term) {     // Check for the terminator (default '\r') meaning end of command
+    if (inChar == _term) {     // Check for the terminator (default '\r') meaning end of command
       #ifdef SERIALCOMMAND_DEBUG
         Serial.print("Received: ");
-        Serial.println(buffer);
+        Serial.println(_buffer);
       #endif
 
-      char *command = strtok_r(buffer, delim, &last);   // Search for command at start of buffer
+      char *command = strtok_r(_buffer, _delim, &_last);   // Search for command at start of buffer
       if (command != NULL) {
-        boolean matched = false;
-        for (int i = 0; i < commandCount; i++) {
+        bool matched = false;
+        for (int i = 0; i < _commandCount; i++) {
           #ifdef SERIALCOMMAND_DEBUG
             Serial.print("Comparing [");
             Serial.print(command);
             Serial.print("] to [");
-            Serial.print(commandList[i].command);
+            Serial.print(_commandList[i].command);
             Serial.println("]");
           #endif
 
           // Compare the found command against the list of known commands for a match
-          if (strncmp(command, commandList[i].command, SERIALCOMMAND_MAXCOMMANDLENGTH) == 0) {
+          if (strncmp(command, _commandList[i].command, SERIALCOMMAND_MAXCOMMANDLENGTH) == 0) {
             #ifdef SERIALCOMMAND_DEBUG
               Serial.print("Matched Command: ");
               Serial.println(command);
             #endif
 
             // Execute the stored handler function for the command
-            (*commandList[i].function)();
+            (*_commandList[i].function)();
             matched = true;
             break;
           }
         }
-        if (!matched && (defaultHandler != NULL)) {
-          (*defaultHandler)(command);
+        if (!matched && (_defaultHandler != NULL)) {
+          (*_defaultHandler)(command);
         }
       }
       clearBuffer();
     }
     else if (isprint(inChar)) {     // Only printable characters into the buffer
-      if (bufPos < SERIALCOMMAND_BUFFER) {
-        buffer[bufPos++] = inChar;  // Put character into buffer
-        buffer[bufPos] = '\0';      // Null terminate
+      if (_bufPos < SERIALCOMMAND_BUFFER) {
+        _buffer[_bufPos++] = inChar;  // Put character into buffer
+        _buffer[_bufPos] = '\0';      // Null terminate
       } else {
         #ifdef SERIALCOMMAND_DEBUG
           Serial.println("Line buffer is full - increase SERIALCOMMAND_BUFFER");
@@ -138,8 +138,8 @@ void SerialCommand::readSerial() {
  * Clear the input buffer.
  */
 void SerialCommand::clearBuffer() {
-  buffer[0] = '\0';
-  bufPos = 0;
+  _buffer[0] = '\0';
+  _bufPos = 0;
 }
 
 /**
@@ -147,5 +147,5 @@ void SerialCommand::clearBuffer() {
  * Returns NULL if no more tokens exist.
  */
 char *SerialCommand::next() {
-  return strtok_r(NULL, delim, &last);
+  return strtok_r(NULL, _delim, &_last);
 }

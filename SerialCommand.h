@@ -57,22 +57,22 @@ class SerialCommand {
   private:
     // Command/handler dictionary
     struct SerialCommandCallback {
-      char command[SERIALCOMMAND_MAXCOMMANDLENGTH + 1];
+      char *command;
       void (*function)();
-    };                                    // Data structure to hold Command/Handler function key-value pairs
-    SerialCommandCallback *commandList;   // Actual definition for command/handler array
-    byte commandCount;
+    };                                     // Data structure to hold Command/Handler function key-value pairs
+    SerialCommandCallback *_commandList;   // Actual definition for command/handler array
+    int  _commandCount;
     int  _maxCommands;
 
     // Pointer to the default handler function
-    void (*defaultHandler)(const char *);
+    void (*_defaultHandler)(const char *);
 
-    char delim[2]; // null-terminated list of character to be used as delimeters for tokenizing (default " ")
-    char term;     // Character that signals end of command (default '\n')
+    char _delim[2]; // null-terminated list of character to be used as delimeters for tokenizing (default " ")
+    char _term;     // Character that signals end of command (default '\n')
 
-    char buffer[SERIALCOMMAND_BUFFER + 1]; // Buffer of stored characters while waiting for terminator character
-    byte bufPos;                        // Current position in the buffer
-    char *last;                         // State variable used by strtok_r during processing
+    char _buffer[SERIALCOMMAND_BUFFER + 1]; // Buffer of stored characters while waiting for terminator character
+    int  _bufPos;                        // Current position in the buffer
+    char *_last;                         // State variable used by strtok_r during processing
 };
 
 #endif //SerialCommand_h
